@@ -144,7 +144,44 @@ private:
 
 };
 
+std::pair<int, int> Analyzer::ApplyRule12(MSfieldPart1& f, bool open)
+{
+	/*
+	
+	Rule 1:
+======
+if some location X satisfies
+Val(X) - KM(X) = | UL(X) |
+where |.| is the cardinality - number of elements in the set
+then all locations in UL(X) are mines
 
+Rule 2:
+======
+if some location X satisfies
+Val(X) = KM(X)
+then all locations in UL(X) are safe
+	
+	*/
+
+
+	for (int x = 0; x < f.GetMaxX(); x++)
+	{
+		for (int y = 0; y < f.GetMaxY(); y++)
+		{
+
+		}
+
+
+	}
+
+
+}
+
+
+std::pair<int, int> Analyzer::ApplyRule3(MSfieldPart1& f, bool open)
+{
+
+}
 
 
 
