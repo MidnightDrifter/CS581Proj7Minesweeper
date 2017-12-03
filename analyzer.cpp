@@ -113,7 +113,7 @@ class Mine
 {
 public:
 
-	Mine(int x, int y, bool known, bool marked) : xCoord(x), yCoord(y), isKnown(known), isMarkedMine(marked), isClicked(false), value(-1){}
+	Mine(int x, int y, bool known, bool marked) : xCoord(x), yCoord(y), isKnown(known), isMarkedMine(marked), isClicked(false), value(-1) {}
 	Mine(int x, int y) : xCoord(x), yCoord(y), isKnown(false), isMarkedMine(false), isClicked(false), value(-1) {}
 	Mine(int x, int y, int v) : xCoord(x), yCoord(y), isKnown(true), isMarkedMine(false), isClicked(true), value(v) {}
 
@@ -150,14 +150,202 @@ private:
 
 
 ////////////////////////////////////////////////////////////
-Analyzer::Analyzer(MSfieldPart1 & field) : field(field),temp(field) {
+Analyzer::Analyzer(MSfieldPart1 & field) : field(field), temp(field) {
 }
+
+
+std::pair<int, int> Analyzer::ApplyRule12(MSfieldPart1& field, bool open)
+{
+	int newMines = 0, newSafeCells=0;
+	for (int i = 0; i < field.GetMaxX(); i++)
+	{
+		for (int j = 0; j < field.GetMaxY(); j++)
+		{
+			/*
+			Rule 1:
+			======
+			if some location X satisfies
+			Val(X) - KM(X) = | UL(X) |
+			where |.| is the cardinality - number of elements in the set
+			then all locations in UL(X) are mines
+
+			Rule 2:
+			======
+			if some location X satisfies
+			Val(X) = KM(X)
+			then all locations in UL(X) are safe
+
+			for (int x = i - 1; x <= i + 1; x++)
+			{
+				for (int y = j - 1; j <= j + 1; j++)
+				{
+
+				}
+			}
+
+			*/
+
+			if (field.IsClicked(i, j))
+			{
+
+				int val = field.GetMineCount(i, j);
+				if (val == 0)
+				{
+					std::set<std::pair<int, int>> uL = field.UnKnownLocations(i, j);
+					for (auto a = uL.begin(); a != uL.end(); a++)
+					{
+						if (field.IsUnknown(a->first, a->second))
+						{
+							field.MarkAsSafe(a->first, a->second);
+							newSafeCells++;
+						}
+					}
+				
+
+				}
+			
+				
+				
+				else   // if(val >0)
+				{
+					std::set<std::pair<int, int>> uL = field.UnKnownLocations(i, j);
+					int kM = field.KnownMines(i, j);
+
+					if (val - kM == uL.size())
+					{
+						//Rule 1 is true
+						for (auto a = uL.begin(); a != uL.end(); a++)
+						{
+							if (field.IsUnknown(a->first, a->second))
+							{
+								field.MarkAsMine(a->first, a->second);
+								newMines++;
+							}
+						}
+					}
+
+
+					if (val == kM)
+					{
+						for (auto a = uL.begin(); a != uL.end(); a++)
+						{
+							if (field.IsUnknown(a->first, a->second))
+							{
+								field.MarkAsSafe(a->first, a->second);
+								newSafeCells++;
+							}
+						}
+					}
+
+
+
+				}
+
+			}
+
+
+		}
+	}
+
+	return std::make_pair(newSafeCells,newMines );
+}
+
+
+
+std::pair<int, int> Analyzer::ApplyRule3(MSfieldPart1& field, bool open)
+{
+	int newMines = 0, newSafeCells = 0;
+
+	for (int i = 0; i < field.GetMaxX(); i++)
+	{
+		for (int j = 0; j < field.GetMaxY(); j++)
+		{
+			/*
+
+			Rule 3:
+			======
+				if for 2 locations X and Y :
+					(Val(X) - KM(X)) - (Val(Y) - KM(Y)) = | UL(X) \ UL(Y) |
+			where "\" is set difference
+				then
+				A) all locations in UL(X)\UL(Y) are mines
+				B) all locations in UL(Y)\UL(X) are safe
+
+
+			*/
+			if (field.IsClicked(i, j))
+			{
+				int val = field.GetMineCount(i, j);
+				int kM = field.KnownMines(i, j);
+				std::set<std::pair<int, int>> uL = field.UnKnownLocations(i, j);
+				for (int x = i; x < i + 3; x++)
+				{
+					for (int y = j; y < j + 3; y++)
+					{
+						if (x != i && y != j  && field.CheckIsInside(x,y) && field.IsClicked(x,y))
+						{
+							std::set<std::pair<int, int>> meDiffN, nDiffMe;
+
+							int valNeighbor = field.GetMineCount(x, y);
+							int kMNeighbor = field.KnownMines(x, y);
+							std::set<std::pair<int, int>> uLNeighbor = field.UnKnownLocations(x, y);
+
+
+							std::set_difference(uL.begin(), uL.end(), uLNeighbor.begin(), uLNeighbor.end(), meDiffN.begin());
+
+
+
+							if ((val - kM) - (valNeighbor - kMNeighbor) == meDiffN.size() )
+							{
+								std::set_difference(uLNeighbor.begin(), uLNeighbor.end(), uL.begin(), uL.end(), nDiffMe.begin());
+
+
+								for (auto a = meDiffN.begin(); a != meDiffN.end(); a++)
+								{
+									if (field.IsUnknown(a->first, a->second))
+									{
+										newMines++;
+										field.MarkAsMine(a->first, a->second);
+									}
+								}
+
+								for (auto a = nDiffMe.begin(); a != nDiffMe.end(); a++)
+								{
+									if (field.IsUnknown(a->first, a->second))
+									{
+										newSafeCells++;
+										field.MarkAsSafe(a->first, a->second);
+									}
+								}
+
+
+							}
+						
+
+
+
+
+						}
+					}
+				}
+			}
+
+
+		}
+	}
+
+
+	return std::make_pair(newSafeCells,newMines );
+}
+
 
 ////////////////////////////////////////////////////////////
 bool Analyzer::IsMine(int x,int y) {
 	temp=field;
 	temp.MarkAsSafe(x,y);
     bool proved = false;
+
+	//Get rid of most of this prolly
 
 	//Assume safe, try to prove otherwise
 	//For each (LEGAL) location around (x,y):

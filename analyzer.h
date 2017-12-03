@@ -2,7 +2,7 @@
 #define ANALYZER_H
 #include "field.h"
 #include <iostream>
-
+#include <algorithm>
 ////////////////////////////////////////////////////////////////////////////////
 class Analyzer {
 	protected:
